@@ -21,7 +21,61 @@ This project is a learning experiment combining different AI models to explore:
 
 ## 📋 Prerequisites
 
-[Installation section remains the same...]
+- Python 3.9+
+- Node.js 18+
+- Replicate API account
+- Git
+
+## 🚀 Installation
+
+1. Clone the repository
+```bash
+git clone https://github.com/yourusername/visual-whispers.git
+cd visual-whispers
+```
+
+2. Install root dependencies
+```bash
+npm install
+```
+
+3. Backend setup
+```bash
+# Create and activate virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows use: .\venv\Scripts\activate
+
+# Install dependencies
+cd backend
+pip install -r requirements.txt
+```
+
+4. Frontend setup
+```bash
+cd frontend
+npm install
+```
+
+## ⚙️ Configuration
+
+1. Create a `.env` file in the backend directory:
+```env
+REPLICATE_API_TOKEN=your_replicate_token_here
+```
+
+2. Create a `.env.local` file in the frontend directory:
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8000
+```
+
+## 🏃‍♂️ Running the Application
+
+Start both frontend and backend with a single command:
+```bash
+npm run dev
+```
+
+The application will be available at `http://localhost:3000`
 
 ## 🎮 How to Use
 
