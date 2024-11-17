@@ -1,0 +1,13 @@
+{
+  "name": "visual-whispers",
+  "version": "1.0.0",
+  "description": "AI-powered image telephone game",
+  "scripts": {
+    "frontend": "cd frontend && npm run dev",
+    "backend": "cd backend && uvicorn main:app --reload",
+    "dev": "concurrently \"npm run frontend\" \"npm run backend\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

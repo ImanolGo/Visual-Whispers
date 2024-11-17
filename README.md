@@ -30,8 +30,8 @@ This project is a learning experiment combining different AI models to explore:
 
 1. Clone the repository
 ```bash
-git clone https://github.com/yourusername/visual-whispers.git
-cd visual-whispers
+git clone https://github.com/ImanolGo/Visual-Whispers.git
+cd Visual-Whispers
 ```
 
 2. Install root dependencies
