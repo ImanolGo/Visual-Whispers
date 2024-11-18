@@ -25,7 +25,7 @@ def format_perspective_prompt(perspective: str) -> str:
 
 async def get_image_description(image_bytes: bytes, perspective: str, temperature: float) -> str:
     """Get image description from Claude."""
-    anthropic = Anthropic(api_key=ANTHROPIC_API_KEY)
+    client = Anthropic(api_key=ANTHROPIC_API_KEY)
     
     # Convert image to base64
     base64_image = base64.b64encode(image_bytes).decode('utf-8')
@@ -34,7 +34,7 @@ async def get_image_description(image_bytes: bytes, perspective: str, temperatur
     system_prompt = format_perspective_prompt(perspective)
     
     try:
-        message = anthropic.messages.create(
+        message = client.messages.create(
             model=ClaudeModel.HAIKU.value,
             max_tokens=1000,
             temperature=temperature,
