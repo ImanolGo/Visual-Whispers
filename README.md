@@ -30,8 +30,8 @@ This project is a learning experiment combining different AI models to explore:
 
 1. Clone the repository
 ```bash
-git clone https://github.com/ImanolGo/Visual-Whispers.git
-cd Visual-Whispers
+git clone https://github.com/yourusername/visual-whispers.git
+cd visual-whispers
 ```
 
 2. Install root dependencies
@@ -41,13 +41,16 @@ npm install
 
 3. Backend setup
 ```bash
-# Create and activate virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows use: .\venv\Scripts\activate
+# Install uv if you haven't already
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Install dependencies
+# Create and activate virtual environment with uv
 cd backend
-pip install -r requirements.txt
+uv venv
+source .venv/bin/activate  # On Windows use: .venv\Scripts\activate
+
+# Install dependencies with uv
+uv pip install -r requirements.txt
 ```
 
 4. Frontend setup
