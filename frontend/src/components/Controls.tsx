@@ -21,23 +21,53 @@ export const Controls = ({
   const [prompt, setPrompt] = useState('');
   const [perspective, setPerspective] = useState('as a medieval peasant');
   const [temperature, setTemperature] = useState(0.7);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!prompt) return;
+    setError(null);
+    
+    // Get the current prompt based on iteration
+    const currentPrompt = currentIteration === 0 ? prompt : prompt || 
+      document.querySelector('.text-gray-700')?.textContent || '';
+
+    console.log('Submitting with:', {
+      prompt: currentPrompt,
+      perspective,
+      temperature,
+      currentIteration
+    });
+
+    if (!currentPrompt && currentIteration === 0) {
+      setError('Please enter an initial prompt');
+      return;
+    }
 
     setIsGenerating(true);
     try {
-      const response = await generateImage(prompt, perspective, temperature);
+      console.log('Calling API with:', {
+        prompt: currentPrompt,
+        perspective,
+        temperature
+      });
+
+      const response = await generateImage(currentPrompt, perspective, temperature);
+      console.log('API Response:', response);
+
       onNewGeneration({
         imageUrl: response.image_urls[0],
         description: response.description,
         prompt: response.modified_prompt,
         iteration: currentIteration + 1
       });
-      setPrompt('');
+
+      // Only clear prompt for initial generation
+      if (currentIteration === 0) {
+        setPrompt('');
+      }
     } catch (error) {
       console.error('Generation error:', error);
+      setError(error instanceof Error ? error.message : 'Failed to generate image');
     } finally {
       setIsGenerating(false);
     }
@@ -102,10 +132,14 @@ export const Controls = ({
           </div>
         </div>
 
+        {error && (
+          <div className="text-red-500 text-sm">{error}</div>
+        )}
+
         <div className="flex gap-4">
           <button
             type="submit"
-            disabled={isGenerating || (!prompt && currentIteration === 0)}
+            disabled={isGenerating || (currentIteration === 0 && !prompt)}
             className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isGenerating ? (

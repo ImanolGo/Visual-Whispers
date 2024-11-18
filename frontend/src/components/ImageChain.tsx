@@ -32,12 +32,8 @@ export const ImageChain = ({ whispers, isGenerating }: ImageChainProps) => {
                   Iteration {whisper.iteration}
                 </h3>
                 <div className="mt-2">
-                  <p className="text-sm font-medium text-gray-500">Description:</p>
+                  <p className="text-sm font-medium text-gray-500">Description (will be used as next prompt):</p>
                   <p className="mt-1 text-gray-700">{whisper.description}</p>
-                </div>
-                <div className="mt-4">
-                  <p className="text-sm font-medium text-gray-500">Next Prompt:</p>
-                  <p className="mt-1 text-gray-700">{whisper.prompt}</p>
                 </div>
               </div>
             </div>
@@ -57,4 +53,4 @@ export const ImageChain = ({ whispers, isGenerating }: ImageChainProps) => {
       )}
     </div>
   );
-};
+}
