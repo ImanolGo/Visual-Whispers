@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { generateImage } from '../utils/api';
+import { generateImage, continueChain } from '../utils/api';
 import type { WhisperState } from '../app/page';
 
 interface ControlsProps {
@@ -26,42 +26,46 @@ export const Controls = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    
-    // Get the current prompt based on iteration
-    const currentPrompt = currentIteration === 0 ? prompt : prompt || 
-      document.querySelector('.text-gray-700')?.textContent || '';
-
-    console.log('Submitting with:', {
-      prompt: currentPrompt,
-      perspective,
-      temperature,
-      currentIteration
-    });
-
-    if (!currentPrompt && currentIteration === 0) {
-      setError('Please enter an initial prompt');
-      return;
-    }
 
     setIsGenerating(true);
     try {
-      console.log('Calling API with:', {
-        prompt: currentPrompt,
-        perspective,
-        temperature
-      });
+      let response;
+      
+      if (currentIteration === 0) {
+        // Initial generation
+        if (!prompt) {
+          setError('Please enter an initial prompt');
+          return;
+        }
+        console.log('Generating first image with:', { prompt, perspective, temperature });
+        response = await generateImage(prompt, perspective, temperature);
+      } else {
+        // Get the last description using the specific data attribute
+        const descriptions = document.querySelectorAll('[data-testid="image-description"]');
+        const lastDescription = descriptions[descriptions.length - 1]?.textContent;
+        
+        if (!lastDescription) {
+          setError('Could not find previous description');
+          return;
+        }
+        
+        console.log('Continuing chain with:', { 
+          previousPrompt: lastDescription, 
+          perspective, 
+          temperature 
+        });
+        response = await continueChain(lastDescription, perspective, temperature);
+      }
 
-      const response = await generateImage(currentPrompt, perspective, temperature);
       console.log('API Response:', response);
 
       onNewGeneration({
-        imageUrl: response.image_urls[0],
+        imageUrl: response.image_url || response.image_urls[0],
         description: response.description,
-        prompt: response.modified_prompt,
+        prompt: response.modified_prompt || response.description,
         iteration: currentIteration + 1
       });
 
-      // Only clear prompt for initial generation
       if (currentIteration === 0) {
         setPrompt('');
       }
@@ -72,7 +76,7 @@ export const Controls = ({
       setIsGenerating(false);
     }
   };
-
+  
   return (
     <div className="bg-white rounded-lg shadow-md p-6 mb-8">
       <form onSubmit={handleSubmit} className="space-y-4">

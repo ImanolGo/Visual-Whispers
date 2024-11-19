@@ -7,9 +7,17 @@ async def generate_image(prompt: str) -> str:
     try:
         output = replicate.run(
             "black-forest-labs/flux-schnell",
-            input={"prompt": prompt}
+            input={ "prompt": prompt,
+                    "go_fast": True,
+                    "megapixels": "0.25",
+                    "num_outputs": 1,
+                    "aspect_ratio": "1:1",
+                    "output_format": "webp",
+                    "output_quality": 80,
+                    "num_inference_steps": 4}
         )
         
+        print(f"Prompt: {prompt}")
         # Flux Schnell returns a list of image URLs
         return list(output)[0]
     except Exception as e:

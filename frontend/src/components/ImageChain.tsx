@@ -1,5 +1,5 @@
 import { Loader2 } from 'lucide-react';
-import type { WhisperState } from '@/app/page';
+import type { WhisperState } from '../app/page';
 
 interface ImageChainProps {
   whispers: WhisperState[];
@@ -33,7 +33,10 @@ export const ImageChain = ({ whispers, isGenerating }: ImageChainProps) => {
                 </h3>
                 <div className="mt-2">
                   <p className="text-sm font-medium text-gray-500">Description (will be used as next prompt):</p>
-                  <p className="mt-1 text-gray-700">{whisper.description}</p>
+                  <p 
+                    className="mt-1 text-gray-700"
+                    data-testid="image-description"
+                  >{whisper.description}</p>
                 </div>
               </div>
             </div>
