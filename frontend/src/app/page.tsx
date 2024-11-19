@@ -3,20 +3,7 @@
 import { useState } from 'react';
 import { ImageChain } from '../components/ImageChain';
 import { Controls } from '../components/Controls';
-
-export type WhisperState = {
-  imageUrl: string;
-  description: string;
-  prompt: string;
-  iteration: number;
-};
-
-export type WhisperState = {
-  imageUrl: string;
-  description: string;
-  prompt: string;
-  iteration: number;
-};
+import type { WhisperState } from './types';
 
 export default function Home() {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -33,31 +20,35 @@ export default function Home() {
   };
 
   return (
-    <main className="container mx-auto px-4 py-8 max-w-6xl">
-      <h1 className="text-4xl font-bold text-center mb-8">Visual Whispers</h1>
-      
-      <div className="mb-8 max-w-xl mx-auto text-center text-gray-600">
-        <p>Generate images through an AI telephone game where each image is described from a unique perspective.</p>
-      </div>
+    <div className="min-h-screen bg-gray-50">
+      <main className="container mx-auto px-4 py-8">
+        <div className="max-w-6xl mx-auto">
+          <h1 className="text-4xl font-bold text-center mb-8">Visual Whispers</h1>
+          
+          <div className="mb-8 max-w-xl mx-auto text-center text-gray-600">
+            <p>Generate images through an AI telephone game where each image is described from a unique perspective.</p>
+          </div>
 
-      <Controls 
-        onNewGeneration={handleNewGeneration}
-        onReset={handleReset}
-        isGenerating={isGenerating}
-        setIsGenerating={setIsGenerating}
-        currentIteration={whispers.length}
-      />
+          {error && (
+            <div className="my-4 p-4 bg-red-50 text-red-700 rounded-md">
+              {error}
+            </div>
+          )}
 
-      {error && (
-        <div className="my-4 p-4 bg-red-50 text-red-700 rounded-md">
-          {error}
+          <Controls 
+            onNewGeneration={handleNewGeneration}
+            onReset={handleReset}
+            isGenerating={isGenerating}
+            setIsGenerating={setIsGenerating}
+            currentIteration={whispers.length}
+          />
+
+          <ImageChain 
+            whispers={whispers}
+            isGenerating={isGenerating}
+          />
         </div>
-      )}
-
-      <ImageChain 
-        whispers={whispers}
-        isGenerating={isGenerating}
-      />
-    </main>
+      </main>
+    </div>
   );
 }
