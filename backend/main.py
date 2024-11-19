@@ -1,7 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from app.models import GenerationRequest
 from app.whispers import generate_image_chain, continue_chain
+from app.download import save_report
+from typing import List
 
 app = FastAPI()
 
@@ -23,4 +26,13 @@ async def continue_generation(request: GenerationRequest):
         previous_prompt=request.prompt,
         perspective=request.perspective,
         temperature=request.temperature
+    )
+
+@app.post("/api/download")
+async def download_report(whispers: List[dict]):
+    filename = await save_report(whispers)
+    return FileResponse(
+        f"downloads/{filename}",
+        media_type="text/html",
+        filename=filename
     )

@@ -1,4 +1,4 @@
-import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { WhisperState } from '../app/page';
 
@@ -45,6 +45,36 @@ export const ImageChain = ({ whispers, isGenerating }: ImageChainProps) => {
     setCurrentIndex(index);
   };
 
+  const handleDownload = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/download`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(whispers)
+      });
+
+      if (!response.ok) throw new Error('Download failed');
+
+      // Get the response as blob
+      const blob = await response.blob();
+      
+      // Create a link and click it to download
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `visual_whispers_${new Date().toISOString().slice(0,19).replace(/[:.]/g, '-')}.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download error:', error);
+      alert('Failed to download report');
+    }
+  };
+
   const navigateWhispers = (direction: 'prev' | 'next') => {
     const newIndex = direction === 'prev' 
       ? Math.max(0, currentIndex - 1)
@@ -59,6 +89,17 @@ export const ImageChain = ({ whispers, isGenerating }: ImageChainProps) => {
 
   return (
     <div className="mt-12 relative">
+      {/* Add download button if there are whispers */}
+      {whispers.length > 0 && (
+        <button
+          onClick={handleDownload}
+          className="absolute right-4 top-[-3rem] bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 flex items-center gap-2"
+        >
+          <Download className="w-4 h-4" />
+          Download Chain
+        </button>
+      )}
+      
       {/* Navigation buttons */}
       {whispers.length > 1 && (
         <>
