@@ -1,22 +1,20 @@
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Optional
 from enum import Enum
-
 class ClaudeModel(str, Enum):
     HAIKU = "claude-3-haiku-20240307"  # Cheapest model
 
 class GenerationRequest(BaseModel):
     prompt: str
-    perspective: str = Field(description="How Claude should describe the image (e.g., 'as a medieval peasant')")
-    temperature: float = Field(ge=0.0, le=1.0, default=0.7)
+    perspective: str = Field(..., description="How the AI should describe the image")
+    temperature: float = Field(0.7, ge=0.0, le=1.0, description="Creativity level for description")
 
-class ImageGenerationResponse(BaseModel):
-    image_urls: List[str]
+class ImageResponse(BaseModel):
+    image_urls: list[str]
     description: str
     modified_prompt: str
 
-class WhisperChainItem(BaseModel):
+class ContinueResponse(BaseModel):
     image_url: str
     description: str
-    prompt: str
-    iteration: int
+    modified_prompt: str
