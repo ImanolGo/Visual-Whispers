@@ -77,8 +77,6 @@ def generate_html_report(whispers: List[dict]) -> str:
             <div class="description">
                 <strong>Description:</strong>
                 <p>{whisper['description']}</p>
-                <strong>Used as prompt for next iteration:</strong>
-                <p>{whisper['prompt']}</p>
             </div>
         </div>
         """

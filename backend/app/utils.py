@@ -13,36 +13,32 @@ anthropic = Anthropic(api_key=ANTHROPIC_API_KEY)
 
 def format_perspective_prompt(perspective: str) -> str:
     """
-    Format the perspective instruction for Claude in a way that works for any character.
+    Format the perspective instruction for Claude to generate more authentic,
+    biased character descriptions that influence the next image generation.
     """
-    # Remove common prefix if present
+    # Clean perspective but preserve core character essence
     perspective = perspective.strip()
     perspective = re.sub(r'^as\s+an?\s+', '', perspective, flags=re.IGNORECASE)
     
-    # Extract any additional context from the perspective
-    match = re.match(r'^(.*?)(?:\s+who\s+(.*))?$', perspective)
-    character = match.group(1) if match else perspective
-    context = match.group(2) if match and match.group(2) else ""
 
-    prompt = f"""
-    You are a {character}.{f' You {context}.' if context else ''} 
-    Describe the image from your unique perspective, considering your:
-    - Background and experiences
-    - Specific knowledge and expertise
-    - Typical way of viewing the world
-    - Common vocabulary and manner of speaking
+    prompt = f"""Embody {perspective}. Filter everything through this exact mindset, so that:
+1. MUST be emotionally charged with your unique worldview
+2. MUST emphasize elements that fascinate or disturb you specifically
+3. MUST use at least 2 technical/professional terms from your field
+4. MUST interpret what you see through your professional/personal lens
+5. MUST mention specific smells, sounds, or tactile sensations you'd notice
+6. MUST include one subtle reference to your past experiences
 
-    Important guidelines:
-    1. Start directly with the description
-    2. Focus on what YOU would notice first
-    3. Use vocabulary natural to your character
-    4. Keep descriptions clear and vivid
-    5. Stay in character without being cartoonish
-    6. Avoid breaking the fourth wall
-    
-    Provide a single paragraph description (50-100 words):
-    """
-    
+Important: 
+- Speak naturally as your character would speak to a peer
+- NO self-introductions or "I am" statements
+- NO meta-references to describing the image
+- Stay deeply in character while being subtle
+- Maximum 75 words
+- Make strong value judgments that reflect your biases
+
+Begin your response with an immediate observation, reaction, or judgment:"""
+
     return prompt.strip()
 
 async def get_image_description(image_bytes: bytes, perspective: str, temperature: float) -> str:
@@ -59,7 +55,8 @@ async def get_image_description(image_bytes: bytes, perspective: str, temperatur
         message = client.messages.create(
             model=ClaudeModel.HAIKU.value,
             max_tokens=1000,
-            temperature=temperature,
+            # Increase temperature slightly to encourage more creative/biased responses
+            temperature=min(temperature + 0.1, 1.0),
             system=system_prompt,
             messages=[
                 {
@@ -84,22 +81,26 @@ async def get_image_description(image_bytes: bytes, perspective: str, temperatur
 def sanitize_description(description: str, perspective: str) -> Tuple[str, str]:
     """
     Clean up the description and enhance it for the next image generation,
-    maintaining the character's perspective.
+    creating stronger character-specific biases.
     """
     # Basic cleanup
     clean_desc = description.strip()
-    clean_desc = re.sub(r'^(Ah,|Oh,|Behold,|I see|Let me tell you about|Before me|Well,)\s*', '', clean_desc, flags=re.IGNORECASE)
     clean_desc = re.sub(r'\s+', ' ', clean_desc)
     
-    # Extract character essence from perspective
-    perspective = perspective.lower()
-    perspective = re.sub(r'^as\s+an?\s+', '', perspective)
+    # Extract character essence
+    perspective = re.sub(r'^(as\s+)?(an?\s+)?', '', perspective.lower())
     
-    # Create an enhanced prompt that maintains the description but adds style bias
+    # Create a more focused and biased prompt for the next generation
     enhanced_prompt = f"""
-    {clean_desc}, 
-    in the style and perspective of {perspective},
-    highly detailed, character-specific interpretation
+    {clean_desc}
+    
+    This scene must be rendered:
+    - Through the distinct lens of {perspective}
+    - With exaggerated elements that matter to the character
+    - Emphasizing professional/cultural details specific to {perspective}
+    - In a style that reflects the character's emotional state
+    - With heightened attention to textures and materials
+    - Using lighting that emphasizes character-specific focal points
     """.strip()
     
     return clean_desc, enhanced_prompt
