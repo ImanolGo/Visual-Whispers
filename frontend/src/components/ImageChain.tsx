@@ -1,6 +1,6 @@
 import { Loader2, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import type { WhisperState } from '../app/page';
+import type { WhisperState } from '../app/types';
 
 interface ImageChainProps {
   whispers: WhisperState[];

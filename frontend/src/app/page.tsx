@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { ImageChain } from '../components/ImageChain';
 import { Controls } from '../components/Controls';
-import type { WhisperState } from './types';
+import type { WhisperState } from '../app/types';
 
 export default function Home() {
   const [isGenerating, setIsGenerating] = useState(false);

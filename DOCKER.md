@@ -1,6 +1,6 @@
 # Docker Setup
 
-This project uses Docker Compose for both development and production environments. The setup includes BuildKit for optimized builds.
+This project uses docker-compose for both development and production environments. The setup includes BuildKit for optimized builds.
 
 ## Prerequisites
 
@@ -62,7 +62,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 
 3. Start the development environment:
 ```bash
-docker compose up
+docker-compose up
 ```
 
 The development setup includes:
@@ -84,7 +84,7 @@ nano .env.prod
 
 2. Deploy to production:
 ```bash
-docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
+docker-compose -f docker-compose.prod.yml --env-file .env.prod up -d
 ```
 
 ## Available Commands
@@ -92,36 +92,36 @@ docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
 ### Development
 ```bash
 # Start services
-docker compose up
+docker-compose up
 
 # Build and start
-docker compose up --build
+docker-compose up --build
 
 # Start in background
-docker compose up -d
+docker-compose up -d
 
 # View logs
-docker compose logs
+docker-compose logs
 
 # Follow logs
-docker compose logs -f
+docker-compose logs -f
 
 # View specific service logs
-docker compose logs backend
-docker compose logs frontend
+docker-compose logs backend
+docker-compose logs frontend
 ```
 
 ### Production
 ```bash
 # Start production stack
-docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
+docker-compose -f docker-compose.prod.yml --env-file .env.prod up -d
 
 # View production logs
-docker compose -f docker-compose.prod.yml logs
+docker-compose -f docker-compose.prod.yml logs
 
 # Update production services
-docker compose -f docker-compose.prod.yml pull
-docker compose -f docker-compose.prod.yml up -d
+docker-compose -f docker-compose.prod.yml pull
+docker-compose -f docker-compose.prod.yml up -d
 ```
 
 ## Project Structure
@@ -182,25 +182,25 @@ networks:
 docker builder prune
 
 # Force rebuild without cache
-docker compose build --no-cache
+docker-compose build --no-cache
 
 # View build details
-docker compose build --progress=plain
+docker-compose build --progress=plain
 ```
 
 ### Runtime Issues
 ```bash
 # Check service status
-docker compose ps
+docker-compose ps
 
 # Check container logs
-docker compose logs [service_name]
+docker-compose logs [service_name]
 
 # Restart services
-docker compose restart
+docker-compose restart
 
 # Rebuild and restart specific service
-docker compose up -d --build [service_name]
+docker-compose up -d --build [service_name]
 ```
 
 ### Common Problems
@@ -222,24 +222,24 @@ sudo chown -R $USER:$USER frontend/
 3. Environment variables not loading:
 ```bash
 # Verify env files
-docker compose config
+docker-compose config
 
 # Check environment in container
-docker compose exec backend env
-docker compose exec frontend env
+docker-compose exec backend env
+docker-compose exec frontend env
 ```
 
 ## Cleanup
 
 ```bash
 # Stop and remove containers
-docker compose down
+docker-compose down
 
 # Remove volumes
-docker compose down -v
+docker-compose down -v
 
 # Remove everything including images
-docker compose down --rmi all -v
+docker-compose down --rmi all -v
 ```
 
 ## Best Practices

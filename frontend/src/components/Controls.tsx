@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { generateImage, continueChain } from '../utils/api';
-import type { WhisperState } from '../app/page';
+import type { WhisperState } from '../app/types';
 
 interface ControlsProps {
   onNewGeneration: (whisper: WhisperState) => void;
