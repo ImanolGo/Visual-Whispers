@@ -1,14 +1,14 @@
-# Use Node 20
+# syntax=docker/dockerfile:1.4
 FROM node:20-slim
 
-# Set working directory
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install
+# Install dependencies with BuildKit cache
+RUN --mount=type=cache,target=/root/.npm \
+    npm install
 
 # Copy the rest of the application
 COPY . .

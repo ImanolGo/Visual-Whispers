@@ -19,16 +19,13 @@ build/
 dist/
 build/
 
-# Local env files
+# Environment files
 .env
 .env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# But keep templates!
-!*.env.template
-!*.env.*.template
+.env.prod
+!.env.template
+!.env.prod.template
+!.env.local.template
 
 # Debug logs
 npm-debug.log*

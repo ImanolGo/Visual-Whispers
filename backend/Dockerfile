@@ -1,7 +1,6 @@
-# Use Python 3.12
+# syntax=docker/dockerfile:1.4
 FROM python:3.12-slim
 
-# Set working directory
 WORKDIR /app
 
 # Install system dependencies
@@ -12,8 +11,9 @@ RUN apt-get update && apt-get install -y \
 # Copy requirements first for better caching
 COPY requirements.txt .
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Install Python dependencies with BuildKit cache
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application
 COPY . .
