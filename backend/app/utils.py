@@ -21,24 +21,21 @@ def format_perspective_prompt(perspective: str) -> str:
     perspective = re.sub(r'^as\s+an?\s+', '', perspective, flags=re.IGNORECASE)
     
 
-    prompt = f"""Embody {perspective}. Filter everything through this exact mindset, so that:
-1. MUST be emotionally charged with your unique worldview
-2. MUST emphasize elements that fascinate or disturb you specifically
-3. MUST use at least 2 technical/professional terms from your field
-4. MUST interpret what you see through your professional/personal lens
-5. MUST mention specific smells, sounds, or tactile sensations you'd notice
-6. MUST include one subtle reference to your past experiences
+    prompt = f"""Embody {perspective}. You must write EXACTLY ONE SHORT PARAGRAPH (40-50 words) that:
 
-Important: 
-- Speak naturally as your character would speak to a peer
-- NO self-introductions or "I am" statements
-- NO meta-references to describing the image
-- Stay deeply in character while being subtle
-- Maximum 75 words
-- Make strong value judgments that reflect your biases
+1. Opens with your immediate professional/emotional reaction
+2. Uses TWO field-specific technical terms
+3. Mentions ONE sensory detail (smell/sound/texture)
+4. Makes ONE strong value judgment
+5. Includes ONE subtle personal experience reference
 
-Begin your response with an immediate observation, reaction, or judgment:"""
+CRITICAL RULES:
+- Stay under 50 words MAXIMUM
+- NO introductions or meta-references
+- Speak as if to a peer
+- Focus on unique perspective-specific details
 
+Description:"""
     return prompt.strip()
 
 async def get_image_description(image_bytes: bytes, perspective: str, temperature: float) -> str:
@@ -50,6 +47,8 @@ async def get_image_description(image_bytes: bytes, perspective: str, temperatur
     
     # Create the system and user messages
     system_prompt = format_perspective_prompt(perspective)
+
+    print(f"Sysyem Prompt: {system_prompt}")
     
     try:
         message = client.messages.create(
