@@ -82,10 +82,47 @@ cp .env.prod.example .env.prod
 nano .env.prod
 ```
 
-2. Deploy to production:
-```bash
-docker-compose -f docker-compose.prod.yml --env-file .env.prod up -d
+Your `.env.prod` should contain:
+```env
+# API Keys
+REPLICATE_API_TOKEN=your_replicate_token_here
+ANTHROPIC_API_KEY=your_claude_api_key_here
+NGROK_AUTHTOKEN=your_ngrok_auth_token
+
+# Environment
+NODE_ENV=production
+
+# Frontend Configuration (will be auto-updated by start script)
+NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
+
+2. Install required tools:
+```bash
+# Install jq for the startup script
+# Ubuntu/Debian:
+sudo apt-get install jq
+# macOS:
+brew install jq
+# Windows (with chocolatey):
+choco install jq
+```
+
+3. Set up startup script:
+```bash
+# Make the script executable
+chmod +x start-prod.sh
+
+# Start production environment with ngrok tunnels
+./start-prod.sh
+```
+
+The script will:
+- Load environment variables from `.env.prod`
+- Validate required variables
+- Start all services with production configuration
+- Set up ngrok tunnels
+- Configure the frontend with the correct API URL
+
 
 ## Available Commands
 
@@ -113,16 +150,112 @@ docker-compose logs frontend
 
 ### Production
 ```bash
-# Start production stack
-docker-compose -f docker-compose.prod.yml --env-file .env.prod up -d
+# Start production stack with ngrok
+./start-prod.sh
+
+# Start without ngrok tunnels
+docker-compose -f docker-compose-prod.yml --env-file .env.prod up -d
 
 # View production logs
-docker-compose -f docker-compose.prod.yml logs
+docker-compose -f docker-compose-prod.yml logs -f
+
+# View specific service logs
+docker-compose -f docker-compose-prod.yml logs frontend
+docker-compose -f docker-compose-prod.yml logs backend
+docker-compose -f docker-compose-prod.yml logs ngrok-frontend
+docker-compose -f docker-compose-prod.yml logs ngrok-backend
 
 # Update production services
-docker-compose -f docker-compose.prod.yml pull
-docker-compose -f docker-compose.prod.yml up -d
+docker-compose -f docker-compose-prod.yml pull
+docker-compose -f docker-compose-prod.yml up -d --build
+
+# Stop all services
+docker-compose -f docker-compose-prod.yml down
 ```
+
+#### Monitoring Production
+
+1. Service Status:
+```bash
+docker-compose -f docker-compose-prod.yml ps
+```
+
+2. Ngrok Inspectors:
+- Frontend Tunnel: http://localhost:4040
+- Backend Tunnel: http://localhost:4041
+
+3. Resource Usage:
+```bash
+docker stats
+```
+
+#### Production Troubleshooting
+
+1. Ngrok Issues:
+```bash
+# Check ngrok logs
+docker-compose -f docker-compose-prod.yml logs ngrok-frontend
+docker-compose -f docker-compose-prod.yml logs ngrok-backend
+
+# Restart ngrok services
+docker-compose -f docker-compose-prod.yml restart ngrok-frontend ngrok-backend
+```
+
+2. URL Configuration:
+```bash
+# Check current frontend configuration
+docker-compose -f docker-compose-prod.yml exec frontend env | grep NEXT_PUBLIC_API_URL
+
+# Manually update frontend configuration
+docker-compose -f docker-compose-prod.yml up -d --build frontend
+```
+
+3. Port Conflicts:
+```bash
+# Check if inspector ports are in use
+lsof -i :4040
+lsof -i :4041
+```
+
+#### Production Security Notes
+
+1. Ngrok Security:
+- Free tier URLs change on every restart
+- URLs are public - implement authentication if needed
+- Monitor ngrok inspectors for unexpected traffic
+- Consider upgrading to paid ngrok plan for fixed URLs
+
+2. Environment Security:
+- Never commit .env.prod file
+- Regularly rotate API keys
+- Monitor ngrok traffic for abuse
+- Use separate API keys for production
+
+#### Production Cleanup
+
+```bash
+# Stop everything
+docker-compose -f docker-compose-prod.yml down
+
+# Remove all production containers and volumes
+docker-compose -f docker-compose-prod.yml down -v
+
+# Complete cleanup including images
+docker-compose -f docker-compose-prod.yml down --rmi all -v
+```
+
+#### Production Best Practices
+
+1. Always use production configuration file (docker-compose-prod.yml)
+2. Keep BuildKit enabled for optimized builds
+3. Monitor ngrok tunnels regularly
+4. Implement proper authentication for production use
+5. Set appropriate rate limits
+6. Regularly update base images and dependencies
+7. Monitor resource usage and scale as needed
+8. Keep startup script updated with latest configuration
+9. Maintain backup of tunnel URLs if needed
+10. Use separate API keys for production environment
 
 ## Project Structure
 ```
