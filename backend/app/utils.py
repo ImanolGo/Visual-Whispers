@@ -47,8 +47,6 @@ async def get_image_description(image_bytes: bytes, perspective: str, temperatur
     
     # Create the system and user messages
     system_prompt = format_perspective_prompt(perspective)
-
-    print(f"Sysyem Prompt: {system_prompt}")
     
     try:
         message = client.messages.create(
