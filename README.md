@@ -73,20 +73,6 @@ For production deployment with ngrok tunneling:
 
 See [DOCKER.md](DOCKER.md) for detailed production deployment instructions.
 
-## 💻 Development Commands
-
-While `start-local.sh` is the recommended way to run the application, you can also use these npm scripts:
-
-```bash
-# Start both frontend and backend
-npm run dev
-
-# Start frontend only
-npm run frontend
-
-# Start backend only
-npm run backend
-```
 
 ## 🔧 Development Tips
 
