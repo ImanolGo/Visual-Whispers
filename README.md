@@ -1,32 +1,4 @@
-# 🎨 Visual Whispers
-
-An experimental AI art project that plays "Chinese Whispers" (also known as "Telephone") with images. The twist? The AI describes each image through different personas or perspectives, creating an imaginative chain of visual interpretations.
-
-## 🎯 Project Purpose
-
-This project is a learning experiment combining different AI models to explore:
-- Image generation with Stable Diffusion models
-- Image-to-text capabilities with configurable perspectives
-- How different viewpoints affect the evolution of generated images
-- API integrations and prompt engineering
-- The creative "drift" of images through multiple AI interpretations
-
-## 🛠️ Tech Stack
-
-- Backend: Python/FastAPI
-- Frontend: Next.js with TypeScript
-- AI Models (via Replicate API):
-  - Image Generation: stability-ai/sdxl
-  - Image Description: salesforce/blip
-
-## 📋 Prerequisites
-
-- Python 3.9+
-- Node.js 18+
-- Replicate API account
-- Git
-
-## 🚀 Installation
+## 🚀 Installation & Setup
 
 1. Clone the repository
 ```bash
@@ -34,51 +6,107 @@ git clone https://github.com/yourusername/visual-whispers.git
 cd visual-whispers
 ```
 
-2. Install root dependencies
+2. Install dependencies
 ```bash
+# Root dependencies
 npm install
-```
 
-3. Backend setup
-```bash
-# Install uv if you haven't already
-curl -LsSf https://astral.sh/uv/install.sh | sh
+# Frontend dependencies
+cd frontend && npm install
+cd ..
 
-# Create and activate virtual environment with uv
+# Backend dependencies
 cd backend
-uv venv
+python -m venv .venv
 source .venv/bin/activate  # On Windows use: .venv\Scripts\activate
-
-# Install dependencies with uv
-uv pip install -r requirements.txt
+pip install -r requirements.txt
+cd ..
 ```
 
-4. Frontend setup
+3. Environment Setup
 ```bash
-cd frontend
-npm install
+# Copy environment template
+cp .env.template .env
+
+# Edit with your values
+nano .env
 ```
 
-## ⚙️ Configuration
-
-1. Create a `.env` file in the backend directory:
+Required variables in `.env`:
 ```env
+# API Keys
 REPLICATE_API_TOKEN=your_replicate_token_here
-```
+ANTHROPIC_API_KEY=your_anthropic_key_here
 
-2. Create a `.env.local` file in the frontend directory:
-```env
-NEXT_PUBLIC_API_URL=http://localhost:8000
+# Frontend Configuration
+BACKEND_URL=http://localhost:8000
+FRONTEND_URL=http://localhost:3000
 ```
 
 ## 🏃‍♂️ Running the Application
 
-Start both frontend and backend with a single command:
+### Local Development
+
+1. Make the startup script executable:
 ```bash
-npm run dev
+chmod +x start-local.sh
 ```
 
-The application will be available at `http://localhost:3000`
+2. Start the development servers:
+```bash
+./start-local.sh
+```
+
+This will:
+- Check for port availability
+- Load environment variables
+- Start both frontend and backend in development mode with hot reloading
+- Frontend: http://localhost:3000
+- Backend: http://localhost:8000
+
+### Production Deployment
+
+For production deployment with ngrok tunneling:
+```bash
+./start-prod.sh
+```
+
+See [DOCKER.md](DOCKER.md) for detailed production deployment instructions.
+
+## 💻 Development Commands
+
+While `start-local.sh` is the recommended way to run the application, you can also use these npm scripts:
+
+```bash
+# Start both frontend and backend
+npm run dev
+
+# Start frontend only
+npm run frontend
+
+# Start backend only
+npm run backend
+```
+
+## 🔧 Development Tips
+
+1. Hot Reloading:
+   - Frontend changes will automatically refresh the browser
+   - Backend changes will automatically restart the server
+   - Environment variable changes require a server restart
+
+2. Port Usage:
+   - Frontend: 3000
+   - Backend: 8000
+   - Make sure these ports are available
+
+3. API Testing:
+   - Swagger UI: http://localhost:8000/docs
+   - ReDoc: http://localhost:8000/redoc
+
+4. Debugging:
+   - Frontend: Use browser DevTools
+   - Backend: Check terminal output for logs
 
 ## 🎮 How to Use
 

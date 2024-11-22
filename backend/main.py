@@ -5,12 +5,29 @@ from app.models import GenerationRequest
 from app.whispers import generate_image_chain, continue_chain
 from app.download import save_report
 from typing import List
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# Get frontend URL from environment variable with fallback
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')
 
 app = FastAPI()
 
+# List of allowed origins
+allowed_origins = [
+    FRONTEND_URL,
+    'http://localhost:3000',  # Fallback for local development
+]
+
+# Filter out empty values and duplicates
+allowed_origins = list(set(origin for origin in allowed_origins if origin))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -36,3 +53,11 @@ async def download_report(whispers: List[dict]):
         media_type="text/html",
         filename=filename
     )
+
+@app.get("/health")
+async def health_check():
+    return {
+        "status": "healthy",
+        "frontend_url": FRONTEND_URL,
+        "allowed_origins": allowed_origins
+    }
