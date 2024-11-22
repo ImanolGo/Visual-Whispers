@@ -47,7 +47,7 @@ export const ImageChain = ({ whispers, isGenerating }: ImageChainProps) => {
 
   const handleDownload = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/download`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/download`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

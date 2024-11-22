@@ -81,27 +81,27 @@ sleep 10
 # Get ngrok URLs
 echo "Getting ngrok URLs..."
 FRONTEND_URL=$(curl -s http://localhost:4040/api/tunnels | jq -r '.tunnels[0].public_url')
-NEXT_PUBLIC_BACKEND_URL=$(curl -s http://localhost:4041/api/tunnels | jq -r '.tunnels[0].public_url')
+NEXT_PUBLIC_API_URL=$(curl -s http://localhost:4041/api/tunnels | jq -r '.tunnels[0].public_url')
 
-if [ -z "$FRONTEND_URL" ] || [ -z "$NEXT_PUBLIC_BACKEND_URL" ]; then
+if [ -z "$FRONTEND_URL" ] || [ -z "$NEXT_PUBLIC_API_URL" ]; then
     echo "Error: Could not get ngrok URLs. Please check if ngrok services are running."
     docker-compose -f docker-compose-prod.yml --env-file .env logs ngrok-frontend ngrok-backend
     exit 1
 fi
 
 echo "Frontend URL: $FRONTEND_URL"
-echo "Backend URL: $NEXT_PUBLIC_BACKEND_URL"
+echo "Backend URL: $NEXT_PUBLIC_API_URL"
 
 # Update frontend with new backend URL
 echo "Updating frontend configuration..."
-export NEXT_PUBLIC_BACKEND_URL=$NEXT_PUBLIC_BACKEND_URL
+export NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 docker-compose -f docker-compose-prod.yml --env-file .env up -d --build frontend
 
 echo "
 🚀 Visual Whispers Production Environment is ready!
 
 📱 Frontend: $FRONTEND_URL
-🔌 Backend API: $NEXT_PUBLIC_BACKEND_URL
+🔌 Backend API: $NEXT_PUBLIC_API_URL
 🔍 Frontend Tunnel Inspector: http://localhost:4040
 🔍 Backend Tunnel Inspector: http://localhost:4041
 

@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# start-local.sh
-
 # Function to check if a port is in use
 check_port() {
     if lsof -Pi :$1 -sTCP:LISTEN -t >/dev/null; then
@@ -16,24 +14,13 @@ get_port_process() {
     lsof -i :$1 -sTCP:LISTEN
 }
 
-# Function to cleanup on exit
-cleanup() {
-    echo -e "\n🛑 Shutting down servers..."
-    kill $(jobs -p) 2>/dev/null
-    exit 0
+# Function to cleanup existing Docker resources
+cleanup_docker() {
+    echo "Cleaning up existing Docker resources..."
+    docker-compose down
+    echo "Waiting for ports to be released..."
+    sleep 5
 }
-
-# Function to prefix output lines
-prefix_output() {
-    prefix="$1"
-    while IFS= read -r line; do
-        echo "$prefix $line"
-    done
-}
-
-
-# Set up trap for cleanup on script termination
-trap cleanup EXIT INT TERM
 
 # Check required ports
 REQUIRED_PORTS=(8000 3000)
@@ -49,8 +36,14 @@ for port in "${REQUIRED_PORTS[@]}"; do
 done
 
 if [ "$PORTS_IN_USE" = true ]; then
-    echo "Please free up the required ports and try again."
-    exit 1
+    echo -n "Would you like to stop conflicting processes and continue? (y/n) "
+    read -r answer
+    if [ "$answer" = "y" ]; then
+        cleanup_docker
+    else
+        echo "Please free up the required ports and try again."
+        exit 1
+    fi
 fi
 
 # Load environment variables
@@ -74,20 +67,29 @@ for var in "${required_vars[@]}"; do
     fi
 done
 
-# Export default URLs if not set
-export FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
-export NEXT_PUBLIC_BACKEND_URL=${NEXT_PUBLIC_BACKEND_URL:-http://localhost:8000}
+# Start the services
+echo "Starting services with local configuration..."
+
+if [ "$1" == "--build" ]; then
+    docker-compose up --build
+else
+    docker-compose up
+fi
 
 echo "
-🚀 Starting Visual Whispers in development mode...
+🚀 Visual Whispers Local Environment is ready!
 
-📱 Frontend will be available at: $FRONTEND_URL
-🔌 Backend API will be available at: $NEXT_PUBLIC_BACKEND_URL
+📱 Frontend: http://localhost:3000
+🔌 Backend API: http://localhost:8000
 
-💡 Press Ctrl+C to stop both servers
+📊 Monitoring:
+  docker-compose logs -f
+
+🛑 To stop:
+  docker-compose down
+
+💡 Note: Using environment from .env
+
+To rebuild everything:
+  ./start-local.sh --build
 "
-
-# Start backend in background with output
-echo "Starting frontend and backend server..."
-npm run dev
-
