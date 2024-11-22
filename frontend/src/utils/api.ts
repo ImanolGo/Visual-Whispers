@@ -1,4 +1,5 @@
-const API_URL = process.env.BACKEND_URL;
+const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+console.log('API_URL', API_URL);
 
 export async function generateImage(
   prompt: string,

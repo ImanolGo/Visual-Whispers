@@ -75,14 +75,14 @@ for var in "${required_vars[@]}"; do
 done
 
 # Export default URLs if not set
-# export FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
-# export BACKEND_URL=${BACKEND_URL:-http://localhost:8000}
+export FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
+export NEXT_PUBLIC_BACKEND_URL=${NEXT_PUBLIC_BACKEND_URL:-http://localhost:8000}
 
 echo "
 🚀 Starting Visual Whispers in development mode...
 
 📱 Frontend will be available at: $FRONTEND_URL
-🔌 Backend API will be available at: $BACKEND_URL
+🔌 Backend API will be available at: $NEXT_PUBLIC_BACKEND_URL
 
 💡 Press Ctrl+C to stop both servers
 "

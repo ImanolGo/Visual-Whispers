@@ -57,7 +57,7 @@ ANTHROPIC_API_KEY=your_claude_api_key_here
 
 Frontend `.env.local`:
 ```env
-BACKEND_URL=http://localhost:8000
+NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
 ```
 
 3. Start the development environment:
@@ -93,7 +93,7 @@ NGROK_AUTHTOKEN=your_ngrok_auth_token
 NODE_ENV=production
 
 # Frontend Configuration (will be auto-updated by start script)
-BACKEND_URL=http://localhost:8000
+NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
 ```
 
 2. Install required tools:
@@ -204,7 +204,7 @@ docker-compose -f docker-compose-prod.yml restart ngrok-frontend ngrok-backend
 2. URL Configuration:
 ```bash
 # Check current frontend configuration
-docker-compose -f docker-compose-prod.yml exec frontend env | grep BACKEND_URL
+docker-compose -f docker-compose-prod.yml exec frontend env | grep NEXT_PUBLIC_BACKEND_URL
 
 # Manually update frontend configuration
 docker-compose -f docker-compose-prod.yml up -d --build frontend

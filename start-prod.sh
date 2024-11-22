@@ -19,7 +19,7 @@ get_port_process() {
 # Function to cleanup existing Docker resources
 cleanup_docker() {
     echo "Cleaning up existing Docker resources..."
-    docker-compose -f docker-compose.yml --env-file .env down
+    docker-compose -f docker-compose-prod.yml --env-file .env down
     echo "Waiting for ports to be released..."
     sleep 5
 }
@@ -69,9 +69,10 @@ for var in "${required_vars[@]}"; do
     fi
 done
 
+
 # Start the services with production compose file
 echo "Starting services with production configuration..."
-docker-compose -f docker-compose.yml --env-file .env up -d
+docker-compose -f docker-compose-prod.yml --env-file .env up -d
 
 # Wait for ngrok to start
 echo "Waiting for ngrok tunnels to be established..."
@@ -80,38 +81,38 @@ sleep 10
 # Get ngrok URLs
 echo "Getting ngrok URLs..."
 FRONTEND_URL=$(curl -s http://localhost:4040/api/tunnels | jq -r '.tunnels[0].public_url')
-BACKEND_URL=$(curl -s http://localhost:4041/api/tunnels | jq -r '.tunnels[0].public_url')
+NEXT_PUBLIC_BACKEND_URL=$(curl -s http://localhost:4041/api/tunnels | jq -r '.tunnels[0].public_url')
 
-if [ -z "$FRONTEND_URL" ] || [ -z "$BACKEND_URL" ]; then
+if [ -z "$FRONTEND_URL" ] || [ -z "$NEXT_PUBLIC_BACKEND_URL" ]; then
     echo "Error: Could not get ngrok URLs. Please check if ngrok services are running."
-    docker-compose -f docker-compose.yml --env-file .env logs ngrok-frontend ngrok-backend
+    docker-compose -f docker-compose-prod.yml --env-file .env logs ngrok-frontend ngrok-backend
     exit 1
 fi
 
 echo "Frontend URL: $FRONTEND_URL"
-echo "Backend URL: $BACKEND_URL"
+echo "Backend URL: $NEXT_PUBLIC_BACKEND_URL"
 
 # Update frontend with new backend URL
 echo "Updating frontend configuration..."
-export BACKEND_URL=$BACKEND_URL
-docker-compose -f docker-compose.yml --env-file .env up -d --build frontend
+export NEXT_PUBLIC_BACKEND_URL=$NEXT_PUBLIC_BACKEND_URL
+docker-compose -f docker-compose-prod.yml --env-file .env up -d --build frontend
 
 echo "
 🚀 Visual Whispers Production Environment is ready!
 
 📱 Frontend: $FRONTEND_URL
-🔌 Backend API: $BACKEND_URL
+🔌 Backend API: $NEXT_PUBLIC_BACKEND_URL
 🔍 Frontend Tunnel Inspector: http://localhost:4040
 🔍 Backend Tunnel Inspector: http://localhost:4041
 
 📊 Monitoring:
-  docker-compose -f docker-compose.yml --env-file .env logs -f
+  docker-compose -f docker-compose-prod.yml --env-file .env logs -f
 
 🛑 To stop:
-  docker-compose -f docker-compose.yml --env-file .env down
+  docker-compose -f docker-compose-prod.yml --env-file .env down
 
 💡 Note: Using environment from .env
 
 To stop everything and clean up:
-  docker-compose -f docker-compose.yml --env-file .env down
+  docker-compose -f docker-compose-prod.yml --env-file .env down
 "

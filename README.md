@@ -39,7 +39,7 @@ REPLICATE_API_TOKEN=your_replicate_token_here
 ANTHROPIC_API_KEY=your_anthropic_key_here
 
 # Frontend Configuration
-BACKEND_URL=http://localhost:8000
+NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
 FRONTEND_URL=http://localhost:3000
 ```
 
