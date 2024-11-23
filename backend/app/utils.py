@@ -13,29 +13,17 @@ anthropic = Anthropic(api_key=ANTHROPIC_API_KEY)
 
 def format_perspective_prompt(perspective: str) -> str:
     """
-    Format the perspective instruction for Claude to generate more authentic,
-    biased character descriptions that influence the next image generation.
+    Creates prompts that help Claude adopt authentic voices for any perspective,
+    from children to historical figures to people with unique mental states.
     """
-    # Clean perspective but preserve core character essence
+    # Clean perspective
     perspective = perspective.strip()
     perspective = re.sub(r'^as\s+an?\s+', '', perspective, flags=re.IGNORECASE)
     
+    prompt = f"""Describe this image as it would appear to {perspective}. Write a single paragraph (30-50 words) capturing their unique perspective, thoughts, knowledge, and biases. Use their characteristic language, references, and viewpoint to create an authentic description.
 
-    prompt = f"""Embody {perspective}. You must write EXACTLY ONE SHORT PARAGRAPH (40-50 words) that:
+    Their immediate reaction to seeing this image:"""
 
-1. Opens with your immediate professional/emotional reaction
-2. Uses TWO field-specific technical terms
-3. Mentions ONE sensory detail (smell/sound/texture)
-4. Makes ONE strong value judgment
-5. Includes ONE subtle personal experience reference
-
-CRITICAL RULES:
-- Stay under 50 words MAXIMUM
-- NO introductions or meta-references
-- Speak as if to a peer
-- Focus on unique perspective-specific details
-
-Description:"""
     return prompt.strip()
 
 async def get_image_description(image_bytes: bytes, perspective: str, temperature: float) -> str:
@@ -50,7 +38,7 @@ async def get_image_description(image_bytes: bytes, perspective: str, temperatur
     
     try:
         message = client.messages.create(
-            model=ClaudeModel.HAIKU.value,
+            model=ClaudeModel.SONNET.value,
             max_tokens=1000,
             # Increase temperature slightly to encourage more creative/biased responses
             temperature=min(temperature + 0.1, 1.0),
