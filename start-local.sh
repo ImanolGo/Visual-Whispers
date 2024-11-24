@@ -1,23 +1,64 @@
 #!/bin/bash
 
+# Function to detect system architecture and normalize it
+get_architecture() {
+    local arch=$(uname -m)
+    case $arch in
+        x86_64)
+            echo "amd64"
+            ;;
+        aarch64|arm64)
+            echo "arm64"
+            ;;
+        armv7l|armv7)
+            echo "arm/v7"
+            ;;
+        *)
+            echo "unknown"
+            ;;
+    esac
+}
+
+# Get and store architecture
+ARCHITECTURE=$(get_architecture)
+echo "Detected architecture: $ARCHITECTURE"
+
+# Export for docker-compose
+export ARCHITECTURE
+export DOCKER_DEFAULT_PLATFORM=linux/$ARCHITECTURE
+
 # Function to check if a port is in use
 check_port() {
-    if lsof -Pi :$1 -sTCP:LISTEN -t >/dev/null; then
-        return 0
+    if command -v lsof >/dev/null 2>&1; then
+        # Use lsof if available (Unix/Linux/macOS)
+        if lsof -Pi :$1 -sTCP:LISTEN -t >/dev/null; then
+            return 0
+        else
+            return 1
+        fi
     else
-        return 1
+        # Fallback to netstat (useful for some Linux distributions)
+        if netstat -tuln | grep -q ":$1 "; then
+            return 0
+        else
+            return 1
+        fi
     fi
 }
 
 # Function to get process using a port
 get_port_process() {
-    lsof -i :$1 -sTCP:LISTEN
+    if command -v lsof >/dev/null 2>&1; then
+        lsof -i :$1 -sTCP:LISTEN
+    else
+        netstat -tuln | grep ":$1 "
+    fi
 }
 
 # Function to cleanup existing Docker resources
 cleanup_docker() {
     echo "Cleaning up existing Docker resources..."
-    docker-compose down
+    DOCKER_DEFAULT_PLATFORM=linux/$ARCHITECTURE docker-compose down
     echo "Waiting for ports to be released..."
     sleep 5
 }
@@ -68,12 +109,12 @@ for var in "${required_vars[@]}"; do
 done
 
 # Start the services
-echo "Starting services with local configuration..."
+echo "Starting services with local configuration for $ARCHITECTURE architecture..."
 
 if [ "$1" == "--build" ]; then
-    docker-compose up --build
+    DOCKER_DEFAULT_PLATFORM=linux/$ARCHITECTURE docker-compose up --build
 else
-    docker-compose up
+    DOCKER_DEFAULT_PLATFORM=linux/$ARCHITECTURE docker-compose up
 fi
 
 echo "
@@ -81,6 +122,7 @@ echo "
 
 📱 Frontend: http://localhost:3000
 🔌 Backend API: http://localhost:8000
+🔧 Architecture: $ARCHITECTURE
 
 📊 Monitoring:
   docker-compose logs -f
@@ -92,4 +134,9 @@ echo "
 
 To rebuild everything:
   ./start-local.sh --build
+
+System Information:
+  Architecture: $ARCHITECTURE
+  Platform: $(uname -s)
+  Machine: $(uname -m)
 "

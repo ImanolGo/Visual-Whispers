@@ -1,9 +1,13 @@
 # syntax=docker/dockerfile:1.4
-FROM python:3.12-slim
+FROM --platform=$TARGETPLATFORM python:3.12-slim
+
+# Accept the target architecture argument
+ARG TARGETARCH
+ARG TARGETPLATFORM
 
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies with architecture-specific optimizations
 RUN apt-get update && apt-get install -y \
     gcc \
     && rm -rf /var/lib/apt/lists/*

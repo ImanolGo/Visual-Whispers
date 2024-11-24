@@ -1,11 +1,11 @@
 # syntax=docker/dockerfile:1.4
-FROM node:20-slim
-
-WORKDIR /app
+FROM --platform=$TARGETPLATFORM node:20-slim
 
 # Accept the build arg and set it as an environment variable
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
+WORKDIR /app
 
 # Copy package files
 COPY package*.json ./

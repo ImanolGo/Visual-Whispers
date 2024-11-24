@@ -7,6 +7,8 @@ services:
       dockerfile: Dockerfile
       args:
         BUILDKIT_INLINE_CACHE: 1
+        TARGETARCH: ${ARCHITECTURE:-amd64}
+    platform: linux/${ARCHITECTURE:-amd64}
     ports:
       - "8000:8000"
     environment:
@@ -25,6 +27,7 @@ services:
         BUILDKIT_INLINE_CACHE: 1
         NODE_ENV: production
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+    platform: linux/${ARCHITECTURE:-amd64}
     ports:
       - "3000:3000"
     environment:
@@ -36,6 +39,7 @@ services:
 
   ngrok-frontend:
     image: ngrok/ngrok:latest
+    platform: linux/${ARCHITECTURE:-amd64}
     environment:
       - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
     command: "http frontend:3000"
@@ -48,6 +52,7 @@ services:
 
   ngrok-backend:
     image: ngrok/ngrok:latest
+    platform: linux/${ARCHITECTURE:-amd64}
     environment:
       - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
     command: "http backend:8000"

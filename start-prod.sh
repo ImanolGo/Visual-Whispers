@@ -2,6 +2,33 @@
 
 # start-prod.sh
 
+# Function to detect system architecture and normalize it
+get_architecture() {
+    local arch=$(uname -m)
+    case $arch in
+        x86_64)
+            echo "amd64"
+            ;;
+        aarch64|arm64)
+            echo "arm64"
+            ;;
+        armv7l|armv7)
+            echo "arm/v7"
+            ;;
+        *)
+            echo "unknown"
+            ;;
+    esac
+}
+
+# Get and store architecture
+ARCHITECTURE=$(get_architecture)
+echo "Detected architecture: $ARCHITECTURE"
+
+# Export for docker-compose
+export ARCHITECTURE
+
+
 # Function to check if a port is in use
 check_port() {
     if lsof -Pi :$1 -sTCP:LISTEN -t >/dev/null; then
@@ -70,9 +97,9 @@ for var in "${required_vars[@]}"; do
 done
 
 
-# Start the services with production compose file
-echo "Starting services with production configuration..."
-docker-compose -f docker-compose-prod.yml --env-file .env up -d
+# Start the services with production compose file and platform argument
+echo "Starting services with production configuration for $ARCHITECTURE..."
+DOCKER_DEFAULT_PLATFORM=linux/$ARCHITECTURE docker-compose -f docker-compose-prod.yml --env-file .env up -d
 
 # Wait for ngrok to start
 echo "Waiting for ngrok tunnels to be established..."
@@ -95,7 +122,7 @@ echo "Backend URL: $NEXT_PUBLIC_API_URL"
 # Update frontend with new backend URL
 echo "Updating frontend configuration..."
 export NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-docker-compose -f docker-compose-prod.yml --env-file .env up -d --build frontend
+DOCKER_DEFAULT_PLATFORM=linux/$ARCHITECTURE docker-compose -f docker-compose-prod.yml --env-file .env up -d --build frontend
 
 echo "
 🚀 Visual Whispers Production Environment is ready!

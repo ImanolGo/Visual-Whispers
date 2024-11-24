@@ -7,6 +7,8 @@ services:
       dockerfile: Dockerfile
       args:
         BUILDKIT_INLINE_CACHE: 1
+        TARGETARCH: ${ARCHITECTURE:-amd64}
+    platform: linux/${ARCHITECTURE:-amd64}
     ports:
       - "8000:8000"
     environment:
@@ -16,6 +18,7 @@ services:
       - FRONTEND_URL=http://localhost:3000
     volumes:
       - ./backend:/app
+      - backend_downloads:/app/downloads
     networks:
       - visual-whispers-net
 
@@ -25,20 +28,20 @@ services:
       dockerfile: Dockerfile
       args:
         BUILDKIT_INLINE_CACHE: 1
-        NEXT_PUBLIC_API_URL: http://localhost:8000 
+        NODE_ENV: production
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+    platform: linux/${ARCHITECTURE:-amd64}
     ports:
       - "3000:3000"
     environment:
-      NODE_ENV: development
-      NEXT_PUBLIC_API_URL: http://localhost:8000
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-      - /app/.next
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000}
     depends_on:
       - backend
     networks:
       - visual-whispers-net
+
+volumes:
+  backend_downloads:
 
 networks:
   visual-whispers-net:
