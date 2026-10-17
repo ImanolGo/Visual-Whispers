@@ -2,9 +2,10 @@
 
 Telephone, played with pictures. One model paints your prompt, a character looks at the painting and describes it in their own voice, and the next painting is made from that description alone. Round after round, watch what gets lost and what gets invented.
 
-![Visual Whispers — a chain of paintings and whispers, streamed live](docs/demo.gif)
+![One round of Visual Whispers, streaming live](docs/demo.gif)
 
-*Live rounds: the painting prints onto the page, then the whisper types itself out word by word.*
+*A live round. The painting prints onto the page, then the whisper types itself out — the highlighted
+words are new this round, and the bar under each card counts how much of the original prompt survived.*
 
 ## How a round works
 
@@ -59,11 +60,10 @@ API docs live at http://localhost:8000/docs. The main endpoint, `POST /api/step`
 
 ## What a finished chain looks like
 
-The whole page after several rounds — the persona circle, the trail of paintings and whispers, and the drift panel:
+Five rounds that began as *“two foxes sharing an umbrella in Tokyo rain”*, told by a house cat, a noir
+detective and a six-year-old. The foxes turned into dogs; the umbrella and the rain survived.
 
-![Visual Whispers full page after a multi-round chain](docs/demo.png)
-
-<sub>Five rounds up close: ![Visual Whispers after five rounds](docs/screenshot.webp)</sub>
+![The whole page after five rounds](docs/demo.png)
 
 ## License
 
