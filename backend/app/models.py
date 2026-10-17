@@ -1,22 +1,34 @@
+from __future__ import annotations
+
+from typing import List, Optional
+
 from pydantic import BaseModel, Field
-from typing import Optional
-from enum import Enum
-class ClaudeModel(str, Enum):
-    HAIKU = "claude-3-haiku-20240307"      # Fast, efficient for simple tasks
-    SONNET = "claude-3-5-sonnet-20241022"    # Balanced performance and cost
-    OPUS = "claude-3-opus-20240229"        # Most capable, highest quality
 
-class GenerationRequest(BaseModel):
-    prompt: str
-    perspective: str = Field(..., description="How the AI should describe the image")
-    temperature: float = Field(0.7, ge=0.0, le=1.0, description="Creativity level for description")
 
-class ImageResponse(BaseModel):
-    image_urls: list[str]
-    description: str
-    modified_prompt: str
+class Persona(BaseModel):
+    name: str = Field(..., min_length=1, max_length=80)
+    emoji: str = Field("🗣️", max_length=16)
+    voice: str = Field(..., min_length=3, max_length=600, description="Who is describing the image")
 
-class ContinueResponse(BaseModel):
-    image_url: str
-    description: str
-    modified_prompt: str
+
+class StepRequest(BaseModel):
+    prompt: str = Field(..., min_length=1, max_length=2000, description="What the painter hears")
+    origin: str = Field(..., min_length=1, max_length=2000, description="The very first prompt")
+    previous: Optional[str] = Field(None, max_length=4000, description="Previous whisper, for diffing")
+    persona: Persona
+    imagination: float = Field(0.6, ge=0.0, le=1.0)
+    bleed: bool = Field(True, description="Let the persona leak into the next painting prompt")
+    aspect_ratio: str = Field("1:1", pattern=r"^(1:1|16:9|9:16|4:3|3:4|3:2|2:3)$")
+
+
+class ExportStep(BaseModel):
+    image_id: str
+    description: str = Field(..., max_length=4000)
+    persona: Persona
+    survival: Optional[float] = None
+
+
+class ExportRequest(BaseModel):
+    origin: str = Field(..., max_length=2000)
+    title: Optional[str] = Field(None, max_length=200)
+    steps: List[ExportStep] = Field(..., min_length=1, max_length=100)

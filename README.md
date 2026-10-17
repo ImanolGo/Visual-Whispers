@@ -1,178 +1,70 @@
-## 🚀 Installation & Setup
+# Visual Whispers
 
-1. Clone the repository
+Telephone, played with pictures. One model paints your prompt, a character looks at the painting and describes it in their own voice, and the next painting is made from that description alone. Round after round, watch what gets lost and what gets invented.
+
+![Visual Whispers — a chain of paintings and whispers, streamed live](docs/demo.gif)
+
+*Live rounds: the painting prints onto the page, then the whisper types itself out word by word.*
+
+## How a round works
+
+```
+your prompt ──► painter ──► image ──► character describes it ──► next painter hears only that ──► …
+```
+
+- **Who is in the circle?** Pick one character to keep the same voice, or several to take turns (space archaeologist, six-year-old, house cat, noir detective…). Invent your own too.
+- **Imagination** goes from *Literal* to *Unhinged*. It changes both the instructions and the model temperature.
+- **Let the character steer the painter** adds their obsessions to the next painting prompt, so the story drifts faster.
+- **Play 5 rounds** runs the chain on its own. Each round streams live: the painting appears, then the whisper types itself out.
+- **What survived** tracks which of your original words are still in the story, and new words are highlighted in every whisper.
+- **Keep it** as an animated GIF, a self-contained web page (images embedded), or a share link.
+
+## Quick start
+
 ```bash
-git clone https://github.com/yourusername/visual-whispers.git
-cd visual-whispers
+cp .env.template .env        # add OPENROUTER_API_KEY (one key runs everything)
+./start-local.sh             # http://localhost:3000
 ```
 
-2. Install dependencies
+No key yet? `./start-local.sh --demo` runs the whole game offline with stand-in models.
+
+### With Docker
+
 ```bash
-# Root dependencies
-npm install
-
-# Frontend dependencies
-cd frontend && npm install
-cd ..
-
-# Backend dependencies
-cd backend
-python -m venv .venv
-source .venv/bin/activate  # On Windows use: .venv\Scripts\activate
-pip install -r requirements.txt
-cd ..
+docker compose up --build                   # http://localhost:8000
+docker compose --profile share up --build   # plus a public ngrok link, see http://localhost:4040
 ```
 
-3. Environment Setup
+One image, one port: the frontend is exported as static files and served by the backend.
+
+## Models
+
+| Role | Default | Notes |
+|---|---|---|
+| Describer | `anthropic/claude-haiku-5.5` via OpenRouter | Fast and good at voices. Any OpenRouter vision model works: set `DESCRIBE_MODEL`. |
+| Painter | Replicate `black-forest-labs/flux-schnell` if `REPLICATE_API_TOKEN` is set | Fastest option, about 1–2 s per image. |
+| | otherwise OpenRouter `black-forest-labs/flux.2-klein-4b` | So the OpenRouter key alone is enough. Any OpenRouter image model works: set `OPENROUTER_IMAGE_MODEL`. |
+
+Images are stored by the backend (`data/`, or the `whispers-data` Docker volume), so exports and share links keep working after the providers' temporary URLs expire.
+
+## Development
+
 ```bash
-# Copy environment template
-cp .env.template .env
-
-# Edit with your values
-nano .env
+cd backend && python -m pytest      # API, providers (HTTP mocked), drift, exports
+cd frontend && npm test             # pure helpers (SSE parsing, personas, highlighting)
+cd frontend && npm run type-check
 ```
 
-Required variables in `.env`:
-```env
-# API Keys
-REPLICATE_API_TOKEN=your_replicate_token_here
-ANTHROPIC_API_KEY=your_anthropic_key_here
+API docs live at http://localhost:8000/docs. The main endpoint, `POST /api/step`, streams Server-Sent Events: `stage → image → stage → token… → done`.
 
-# Frontend Configuration
-NEXT_PUBLIC_API_URL=http://localhost:8000
-FRONTEND_URL=http://localhost:3000
-```
+## What a finished chain looks like
 
-## 🏃‍♂️ Running the Application
+The whole page after several rounds — the persona circle, the trail of paintings and whispers, and the drift panel:
 
-### Local Development
+![Visual Whispers full page after a multi-round chain](docs/demo.png)
 
-1. Make the startup script executable:
-```bash
-chmod +x start-local.sh
-```
+<sub>Five rounds up close: ![Visual Whispers after five rounds](docs/screenshot.webp)</sub>
 
-2. Start the development servers:
-```bash
-./start-local.sh
-```
+## License
 
-This will:
-- Check for port availability
-- Load environment variables
-- Start both frontend and backend in development mode with hot reloading
-- Frontend: http://localhost:3000
-- Backend: http://localhost:8000
-
-### Production Deployment
-
-For production deployment with ngrok tunneling:
-```bash
-./start-prod.sh
-```
-
-See [DOCKER.md](DOCKER.md) for detailed production deployment instructions.
-
-
-## 🔧 Development Tips
-
-1. Hot Reloading:
-   - Frontend changes will automatically refresh the browser
-   - Backend changes will automatically restart the server
-   - Environment variable changes require a server restart
-
-2. Port Usage:
-   - Frontend: 3000
-   - Backend: 8000
-   - Make sure these ports are available
-
-3. API Testing:
-   - Swagger UI: http://localhost:8000/docs
-   - ReDoc: http://localhost:8000/redoc
-
-4. Debugging:
-   - Frontend: Use browser DevTools
-   - Backend: Check terminal output for logs
-
-## 🎮 How to Use
-
-1. Initial Setup:
-   - Enter your initial prompt (e.g., "a serene lake at sunset")
-   - Choose a perspective for image description (e.g., "as a medieval peasant")
-   - Set the "imagination level" (0.0 - 1.0)
-
-2. Generation Process:
-   - Click "Generate First Image" to start
-   - The AI will:
-     1. Generate an image from your prompt
-     2. Describe that image from your chosen perspective
-     3. Use that description to generate the next image
-   - Click "Next Iteration" when ready to continue
-   - You can change the perspective or imagination level at any point
-
-3. Controls:
-   - Manual iteration control with "Next Iteration" button
-   - Perspective selector for image description
-   - Imagination level slider (temperature)
-   - Reset button to start a new chain
-
-## 🌟 Features
-
-- Customizable perspectives for image description:
-  - Historical figures (e.g., "as a medieval peasant", "as a Victorian explorer")
-  - Age-based perspectives (e.g., "as a 6-year-old child", "as a wise elder")
-  - Professional viewpoints (e.g., "as an art critic", "as a botanist")
-  - Cultural perspectives (e.g., "as a Buddhist monk", "as a Renaissance artist")
-- Adjustable "imagination level" (temperature):
-  - Low (0.0-0.3): Literal, detailed descriptions
-  - Medium (0.4-0.7): Balanced interpretation
-  - High (0.8-1.0): More creative and imaginative descriptions
-- Visual history showing the evolution of images
-- Display of:
-  - Original prompt
-  - Current perspective/persona
-  - AI-generated description
-  - Imagination level
-- Download capability for image sequences
-- Shareable links for interesting chains
-
-## 💡 Tips
-
-- Experiment with different perspectives:
-  - Try contrasting viewpoints (e.g., "modern scientist" vs "ancient shaman")
-  - Use emotional perspectives (e.g., "as an optimistic poet")
-  - Mix technical and naive viewpoints
-- Imagination level effects:
-  - Lower values (0.1-0.3) for more consistent image chains
-  - Higher values (0.7-1.0) for more surprising and creative evolution
-  - Mid-range (0.4-0.6) for balanced interpretation
-- Start with clear, distinctive images for best results
-- Try running the same initial image through different perspectives
-
-## ⚙️ Advanced Usage
-
-- Combine perspectives with time periods (e.g., "as a 1920s jazz musician")
-- Use professional perspectives for specific details (e.g., "as a botanist focusing on plant species")
-- Experiment with emotional states (e.g., "as an excited child on Christmas morning")
-- Try abstract perspectives (e.g., "as a color-blind painter", "as a time traveler")
-
-## 📝 Notes
-
-- This is an experimental project for learning purposes
-- Description generation may take longer with more complex perspectives
-- The quality of the image chain depends on both the clarity of the perspective and the imagination level
-- The Replicate API has usage limits - check their documentation for details
-
-## 🤝 Contributing
-
-This is a learning project, but suggestions and improvements are welcome! Feel free to:
-1. Fork the repository
-2. Create a feature branch
-3. Submit a pull request
-
-## 📄 License
-
-MIT License - feel free to use this for your own learning!
-
----
-Made with ❤️ and curiosity about AI
+MIT

@@ -1,48 +1,27 @@
-version: '3.8'
-
+# docker compose up --build                  -> http://localhost:8000
+# docker compose --profile share up --build  -> also opens a public ngrok tunnel (URL at http://localhost:4040)
 services:
-  backend:
-    build: 
-      context: ./backend
-      dockerfile: Dockerfile
-      args:
-        BUILDKIT_INLINE_CACHE: 1
-        TARGETARCH: ${ARCHITECTURE:-amd64}
-    platform: linux/${ARCHITECTURE:-amd64}
+  app:
+    build: .
     ports:
       - "8000:8000"
-    environment:
-      - PYTHONUNBUFFERED=1
-      - REPLICATE_API_TOKEN=${REPLICATE_API_TOKEN}
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-      - FRONTEND_URL=http://localhost:3000
+    env_file:
+      - path: .env
+        required: false
     volumes:
-      - ./backend:/app
-      - backend_downloads:/app/downloads
-    networks:
-      - visual-whispers-net
+      - whispers-data:/data   # generated images and shared chains survive restarts
+    restart: unless-stopped
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        BUILDKIT_INLINE_CACHE: 1
-        NODE_ENV: production
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
-    platform: linux/${ARCHITECTURE:-amd64}
-    ports:
-      - "3000:3000"
+  ngrok:
+    image: ngrok/ngrok:latest
+    profiles: ["share"]
+    command: http app:8000
     environment:
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN:?set NGROK_AUTHTOKEN in .env to share publicly}
+    ports:
+      - "4040:4040"
     depends_on:
-      - backend
-    networks:
-      - visual-whispers-net
+      - app
 
 volumes:
-  backend_downloads:
-
-networks:
-  visual-whispers-net:
-    driver: bridge
+  whispers-data:

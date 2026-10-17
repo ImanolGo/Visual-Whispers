@@ -1,22 +1,13 @@
 {
   "name": "visual-whispers",
   "private": true,
-  "description": "AI-powered image telephone game",
-  "workspaces": [
-    "frontend"
-  ],
+  "description": "A game of telephone with pictures: AI paints, AI characters describe, repeat.",
   "scripts": {
-    "dev": "docker-compose up",
-    "dev:build": "docker-compose up --build",
-    "prod": "docker-compose -f docker-compose-prod.yml up",
-    "prod:build": "docker-compose -f docker-compose-prod.yml up --build",
-    "cleanup": "./cleanup-prod.sh",
-    "frontend": "npm run dev -w frontend",
-    "lint": "npm run lint -w frontend",
-    "type-check": "npm run type-check -w frontend",
-    "test": "npm run test -w frontend"
-  },
-  "devDependencies": {
-    "npm-run-all": "^4.1.5"
+    "dev": "./start-local.sh",
+    "demo": "./start-local.sh --demo",
+    "prod": "docker compose up --build",
+    "share": "docker compose --profile share up --build",
+    "test": "cd backend && python -m pytest && cd ../frontend && npm test",
+    "type-check": "npm --prefix frontend run type-check"
   }
 }

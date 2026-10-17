@@ -1,13 +1,98 @@
+@import '@fontsource-variable/anybody/standard.css';
+@import '@fontsource-variable/newsreader/standard-italic.css';
+@import '@fontsource-variable/newsreader/standard.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Hide scrollbar while maintaining functionality */
-.hide-scrollbar::-webkit-scrollbar {
-    display: none;
+/* Risograph print shop: cool paper, two fluorescent inks that never quite line up. */
+:root {
+  --paper: #eceff3;
+  --sheet: #f8f9fb;
+  --ink: #1e1a3c;
+  --muted: #5d5a78;
+  --line: #c9cdd8;
+  --pink: #ff48b0;
+  --blue: #0078bf;
+  --yellow: #ffe800;
+  --blend: multiply;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #151229;
+    --sheet: #1f1b38;
+    --ink: #eceff3;
+    --muted: #a6a3c2;
+    --line: #3a3560;
+    --pink: #ff5cba;
+    --blue: #3aa6ff;
+    --yellow: #ffe800;
+    --blend: screen;
+    color-scheme: dark;
   }
-  
-  .hide-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
+}
+
+html { background: var(--paper); }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Anybody Variable', system-ui, sans-serif;
+  font-variation-settings: 'wdth' 100;
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; border-radius: 4px; }
+
+/* ---------- the one loud thing: a title that fades out like a whisper, printed off-register ---------- */
+.title { position: relative; display: inline-block; line-height: 0.95; letter-spacing: -0.01em; }
+.title .ch { display: inline-block; }
+.title .layer { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: var(--blend); }
+.title .layer.pink { color: var(--pink); transform: translate(4px, 2px); }
+.title .layer.blue { color: var(--blue); transform: translate(-3px, -1px); }
+.title .base { color: transparent; }
+@media (prefers-reduced-motion: no-preference) {
+  .title .layer.pink { animation: drift-p 9s ease-in-out infinite alternate; }
+  .title .layer.blue { animation: drift-b 11s ease-in-out infinite alternate; }
+}
+@keyframes drift-p { to { transform: translate(6px, -1px); } }
+@keyframes drift-b { to { transform: translate(-5px, 2px); } }
+
+/* ---------- a new picture "prints": inks slide into register ---------- */
+.print { filter: drop-shadow(5px 0 0 var(--pink)) drop-shadow(-5px 0 0 var(--blue)); }
+@media (prefers-reduced-motion: no-preference) {
+  .print.fresh { animation: register 900ms cubic-bezier(.2,.7,.2,1) both; }
+}
+@keyframes register {
+  from { filter: drop-shadow(22px 6px 0 var(--pink)) drop-shadow(-18px -8px 0 var(--blue)); opacity: .2; }
+  to   { filter: drop-shadow(5px 0 0 var(--pink)) drop-shadow(-5px 0 0 var(--blue)); opacity: 1; }
+}
+
+/* halftone placeholder while the painter works */
+.halftone {
+  background-color: var(--sheet);
+  background-image: radial-gradient(circle, var(--pink) 1.4px, transparent 1.6px),
+                    radial-gradient(circle, var(--blue) 1.4px, transparent 1.6px);
+  background-size: 14px 14px, 14px 14px;
+  background-position: 0 0, 7px 7px;
+  opacity: .55;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .halftone { animation: halftone 2.4s linear infinite; }
+}
+@keyframes halftone { to { background-position: 14px 0, -7px 7px; } }
+
+.caret::after { content: '▍'; color: var(--pink); margin-left: 1px; }
+@media (prefers-reduced-motion: no-preference) {
+  .caret::after { animation: blink 1s steps(1) infinite; }
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+mark.new { background: var(--yellow); color: #1e1a3c; padding: 0 .1em; border-radius: 2px; }
+
+.whisper { font-family: 'Newsreader Variable', Georgia, serif; font-style: italic; }
+
+.trail { scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+
+input[type='range'] { accent-color: var(--pink); }

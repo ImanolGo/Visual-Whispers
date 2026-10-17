@@ -1,7 +1,13 @@
 **/.git
 **/node_modules
 **/__pycache__
+**/.pytest_cache
 **/.next
+**/out
+**/.venv
 **/venv
 **/.env
-downloads/
+**/.env.local
+**/tsconfig.tsbuildinfo
+backend/data
+data

@@ -1,142 +1,45 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# Run backend (FastAPI, auto-reload) and frontend (Next.js dev server) side by side.
+#   ./start-local.sh          use the API keys in .env
+#   ./start-local.sh --demo   offline demo: fake painter and describer, no keys needed
+set -euo pipefail
+cd "$(dirname "$0")"
 
-# Function to detect system architecture and normalize it
-get_architecture() {
-    local arch=$(uname -m)
-    case $arch in
-        x86_64)
-            echo "amd64"
-            ;;
-        aarch64|arm64)
-            echo "arm64"
-            ;;
-        armv7l|armv7)
-            echo "arm/v7"
-            ;;
-        *)
-            echo "unknown"
-            ;;
-    esac
-}
-
-# Get and store architecture
-ARCHITECTURE=$(get_architecture)
-echo "Detected architecture: $ARCHITECTURE"
-
-# Export for docker-compose
-export ARCHITECTURE
-export DOCKER_DEFAULT_PLATFORM=linux/$ARCHITECTURE
-
-# Function to check if a port is in use
-check_port() {
-    if command -v lsof >/dev/null 2>&1; then
-        # Use lsof if available (Unix/Linux/macOS)
-        if lsof -Pi :$1 -sTCP:LISTEN -t >/dev/null; then
-            return 0
-        else
-            return 1
-        fi
-    else
-        # Fallback to netstat (useful for some Linux distributions)
-        if netstat -tuln | grep -q ":$1 "; then
-            return 0
-        else
-            return 1
-        fi
-    fi
-}
-
-# Function to get process using a port
-get_port_process() {
-    if command -v lsof >/dev/null 2>&1; then
-        lsof -i :$1 -sTCP:LISTEN
-    else
-        netstat -tuln | grep ":$1 "
-    fi
-}
-
-# Function to cleanup existing Docker resources
-cleanup_docker() {
-    echo "Cleaning up existing Docker resources..."
-    DOCKER_DEFAULT_PLATFORM=linux/$ARCHITECTURE docker-compose down
-    echo "Waiting for ports to be released..."
-    sleep 5
-}
-
-# Check required ports
-REQUIRED_PORTS=(8000 3000)
-PORTS_IN_USE=false
-
-echo "Checking required ports..."
-for port in "${REQUIRED_PORTS[@]}"; do
-    if check_port "$port"; then
-        echo "⚠️  Port $port is in use by:"
-        get_port_process "$port"
-        PORTS_IN_USE=true
-    fi
-done
-
-if [ "$PORTS_IN_USE" = true ]; then
-    echo -n "Would you like to stop conflicting processes and continue? (y/n) "
-    read -r answer
-    if [ "$answer" = "y" ]; then
-        cleanup_docker
-    else
-        echo "Please free up the required ports and try again."
-        exit 1
-    fi
+if [[ "${1:-}" == "--demo" ]]; then
+  export MOCK_PROVIDERS=1
+  echo "🎭 Demo mode: offline stand-ins, no API keys used."
+elif [[ ! -f .env ]]; then
+  echo "No .env found. Copy .env.template to .env and add OPENROUTER_API_KEY, or run ./start-local.sh --demo"
+  exit 1
 fi
 
-# Load environment variables
-if [ -f .env ]; then
-    echo "Loading environment variables..."
-    set -a
-    source .env
-    set +a
-else
-    echo "Error: .env file not found"
+for port in 8000 3000; do
+  if (exec 3<>/dev/tcp/127.0.0.1/$port) 2>/dev/null; then
+    echo "Port $port is already in use. Stop whatever is running there and try again."
     exit 1
-fi
-
-# Check for required environment variables
-required_vars=("REPLICATE_API_TOKEN" "ANTHROPIC_API_KEY")
-
-for var in "${required_vars[@]}"; do
-    if [ -z "${!var}" ]; then
-        echo "Error: $var is not set in .env file"
-        exit 1
-    fi
+  fi
 done
 
-# Start the services
-echo "Starting services with local configuration for $ARCHITECTURE architecture..."
-
-if [ "$1" == "--build" ]; then
-    DOCKER_DEFAULT_PLATFORM=linux/$ARCHITECTURE docker-compose up --build
-else
-    DOCKER_DEFAULT_PLATFORM=linux/$ARCHITECTURE docker-compose up
+# Backend
+if [[ ! -d backend/.venv ]]; then
+  echo "Creating backend virtualenv..."
+  python3 -m venv backend/.venv
+  backend/.venv/bin/pip install -q -r backend/requirements-dev.txt
 fi
+# Frontend
+if [[ ! -d frontend/node_modules ]]; then
+  echo "Installing frontend packages..."
+  npm --prefix frontend ci --no-audit --no-fund
+fi
+
+trap 'kill 0' EXIT INT TERM
+(cd backend && .venv/bin/uvicorn main:app --reload --port 8000) &
+npm --prefix frontend run dev -- --port 3000 &
 
 echo "
-🚀 Visual Whispers Local Environment is ready!
-
-📱 Frontend: http://localhost:3000
-🔌 Backend API: http://localhost:8000
-🔧 Architecture: $ARCHITECTURE
-
-📊 Monitoring:
-  docker-compose logs -f
-
-🛑 To stop:
-  docker-compose down
-
-💡 Note: Using environment from .env
-
-To rebuild everything:
-  ./start-local.sh --build
-
-System Information:
-  Architecture: $ARCHITECTURE
-  Platform: $(uname -s)
-  Machine: $(uname -m)
+✨ Visual Whispers
+   App:      http://localhost:3000
+   API docs: http://localhost:8000/docs
+   Ctrl+C stops both.
 "
+wait
