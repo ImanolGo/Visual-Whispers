@@ -95,9 +95,69 @@ def test_openrouter_describer_streams_tokens():
     assert body["messages"][1]["content"][0]["image_url"]["url"].startswith("data:image/jpeg;base64,")
 
 
+def test_openrouter_describer_asks_reasoning_models_not_to_think():
+    seen = {}
+
+    def handler(request):
+        seen["body"] = json.loads(request.content)
+        return httpx.Response(200, text='data: {"choices":[{"delta":{"content":"ok"}}]}\n\ndata: [DONE]\n\n',
+                              headers={"content-type": "text/event-stream"})
+
+    client = httpx.AsyncClient(base_url="https://x", transport=httpx.MockTransport(handler))
+    d = OpenRouterDescriber(Settings(openrouter_api_key="k", describe_model="vendor/reasoner-1"), client=client)
+
+    async def collect():
+        return [t async for t in d.stream(Image.new("RGB", (8, 8)), "as a cat", 0.5)]
+
+    assert "".join(run(collect())) == "ok"
+    assert seen["body"]["reasoning"] == {"enabled": False}
+    assert seen["body"]["max_tokens"] >= 1000  # room for the answer, whatever the model does
+
+
+def test_openrouter_describer_drops_reasoning_flag_if_the_model_rejects_it():
+    calls = []
+
+    def handler(request):
+        body = json.loads(request.content)
+        calls.append(body)
+        if "reasoning" in body:
+            return httpx.Response(400, json={"error": {"message": "reasoning is not supported for this model"}})
+        return httpx.Response(200, text='data: {"choices":[{"delta":{"content":"ok"}}]}\n\ndata: [DONE]\n\n',
+                              headers={"content-type": "text/event-stream"})
+
+    client = httpx.AsyncClient(base_url="https://x", transport=httpx.MockTransport(handler))
+    d = OpenRouterDescriber(Settings(openrouter_api_key="k", describe_model="vendor/plain-vision-1"), client=client)
+
+    async def collect():
+        return [t async for t in d.stream(Image.new("RGB", (8, 8)), "as a cat", 0.5)]
+
+    assert "".join(run(collect())) == "ok"
+    assert len(calls) == 2 and "reasoning" not in calls[1]
+
+
+def test_openrouter_describer_reports_a_token_starved_stream():
+    def handler(request):
+        body = ': OPENROUTER PROCESSING\n\ndata: {"choices":[{"delta":{"content":""},"finish_reason":"length"}]}\n\ndata: [DONE]\n\n'
+        return httpx.Response(200, text=body, headers={"content-type": "text/event-stream"})
+
+    client = httpx.AsyncClient(base_url="https://x", transport=httpx.MockTransport(handler))
+    d = OpenRouterDescriber(Settings(openrouter_api_key="k"), client=client)
+
+    async def collect():
+        return [t async for t in d.stream(Image.new("RGB", (8, 8)), "as a cat", 0.5)]
+
+    with pytest.raises(ProviderError, match="ran out of tokens"):
+        run(collect())
+
+
 def test_openrouter_describer_reports_auth_errors():
-    client = httpx.AsyncClient(base_url="https://x", transport=httpx.MockTransport(
-        lambda r: httpx.Response(401, json={"error": {"message": "No auth credentials found"}})))
+    calls = {"n": 0}
+
+    def handler(request):
+        calls["n"] += 1
+        return httpx.Response(401, json={"error": {"message": "No auth credentials found"}})
+
+    client = httpx.AsyncClient(base_url="https://x", transport=httpx.MockTransport(handler))
     d = OpenRouterDescriber(Settings(openrouter_api_key="k"), client=client)
 
     async def collect():
@@ -105,6 +165,46 @@ def test_openrouter_describer_reports_auth_errors():
 
     with pytest.raises(ProviderError, match="401.*check OPENROUTER_API_KEY"):
         run(collect())
+    assert calls["n"] == 1  # a bad key is not worth retrying
+
+
+def test_openrouter_describer_retries_an_empty_stream():
+    calls = {"n": 0}
+
+    def handler(request):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            return httpx.Response(200, text=": OPENROUTER PROCESSING\n\ndata: [DONE]\n\n",
+                                  headers={"content-type": "text/event-stream"})
+        return httpx.Response(200, text='data: {"choices":[{"delta":{"content":"A cat."}}]}\n\ndata: [DONE]\n\n',
+                              headers={"content-type": "text/event-stream"})
+
+    client = httpx.AsyncClient(base_url="https://x", transport=httpx.MockTransport(handler))
+    d = OpenRouterDescriber(Settings(openrouter_api_key="k"), client=client)
+
+    async def collect():
+        return [t async for t in d.stream(Image.new("RGB", (8, 8)), "as a cat", 0.5)]
+
+    assert "".join(run(collect())) == "A cat."
+    assert calls["n"] == 2  # retried once, then succeeded
+
+
+def test_openrouter_describer_gives_up_after_two_empty_streams():
+    calls = {"n": 0}
+
+    def handler(request):
+        calls["n"] += 1
+        return httpx.Response(200, text="data: [DONE]\n\n", headers={"content-type": "text/event-stream"})
+
+    client = httpx.AsyncClient(base_url="https://x", transport=httpx.MockTransport(handler))
+    d = OpenRouterDescriber(Settings(openrouter_api_key="k"), client=client)
+
+    async def collect():
+        return [t async for t in d.stream(Image.new("RGB", (8, 8)), "as a cat", 0.5)]
+
+    with pytest.raises(ProviderError, match="empty whisper"):
+        run(collect())
+    assert calls["n"] == 2
 
 
 def test_openrouter_painter_decodes_data_url_and_picks_modalities():

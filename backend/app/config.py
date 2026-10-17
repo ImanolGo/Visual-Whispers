@@ -23,6 +23,7 @@ def _bool(name: str, default: bool = False) -> bool:
 class Settings:
     openrouter_api_key: str = ""
     describe_model: str = "anthropic/claude-haiku-5.5"
+    describe_max_tokens: int = 1200
     image_provider: str = "auto"  # auto | replicate | openrouter | mock
     replicate_api_token: str = ""
     replicate_model: str = "black-forest-labs/flux-schnell"
@@ -39,6 +40,7 @@ class Settings:
         return cls(
             openrouter_api_key=os.getenv("OPENROUTER_API_KEY", "").strip(),
             describe_model=os.getenv("DESCRIBE_MODEL", cls.describe_model),
+            describe_max_tokens=int(os.getenv("DESCRIBE_MAX_TOKENS", cls.describe_max_tokens)),
             image_provider=os.getenv("IMAGE_PROVIDER", cls.image_provider).strip().lower(),
             replicate_api_token=os.getenv("REPLICATE_API_TOKEN", "").strip(),
             replicate_model=os.getenv("REPLICATE_MODEL", cls.replicate_model),

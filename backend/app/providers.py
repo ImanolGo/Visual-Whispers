@@ -30,7 +30,15 @@ APP_HEADERS = {"HTTP-Referer": "https://github.com/ImanolGo/Visual-Whispers", "X
 
 
 class ProviderError(RuntimeError):
-    """Something went wrong talking to a model. The message is safe to show users."""
+    """Something went wrong talking to a model. The message is safe to show users.
+
+    ``retryable`` marks the hiccups worth one more try (a dropped or empty
+    stream, a 5xx, a rate limit) as opposed to real errors like a bad key.
+    """
+
+    def __init__(self, message: str, *, retryable: bool = False):
+        super().__init__(message)
+        self.retryable = retryable
 
 
 # --------------------------------------------------------------------------- #
@@ -109,21 +117,29 @@ class Painter(Protocol):
 
 
 class OpenRouterDescriber:
+    # A stream can occasionally come back empty or die mid-flight; one quiet retry
+    # keeps a five-round chain from collapsing on a single hiccup.
+    ATTEMPTS = 2
+    RETRY_DELAY = 0.6
+
     def __init__(self, settings: Settings, client: Optional[httpx.AsyncClient] = None):
         if not settings.openrouter_api_key:
             raise ProviderError("OPENROUTER_API_KEY is not set")
         self.name = settings.describe_model
+        self.max_tokens = settings.describe_max_tokens
+        # Models that turned down the reasoning flag are asked again without it.
+        self._no_reasoning: set[str] = set()
         self.client = client or httpx.AsyncClient(
             base_url=OPENROUTER_URL,
             timeout=settings.request_timeout,
             headers={"Authorization": f"Bearer {settings.openrouter_api_key}", **APP_HEADERS},
         )
 
-    async def stream(self, image: Image.Image, voice: str, imagination: float) -> AsyncIterator[str]:
+    def _body(self, image: Image.Image, voice: str, imagination: float) -> dict:
         body = {
             "model": self.name,
             "stream": True,
-            "max_tokens": 400,
+            "max_tokens": self.max_tokens,
             "temperature": describe_temperature(imagination),
             "messages": [
                 {"role": "system", "content": build_system_prompt(voice, imagination)},
@@ -136,26 +152,63 @@ class OpenRouterDescriber:
                 },
             ],
         }
-        got_text = False
-        async with self.client.stream("POST", "/chat/completions", json=body) as resp:
-            if resp.status_code != 200:
-                raise ProviderError(_openrouter_error(await resp.aread(), resp.status_code))
-            async for line in resp.aiter_lines():
-                if not line.startswith("data:"):
-                    continue  # SSE comments / keep-alives
-                payload = line[5:].strip()
-                if payload == "[DONE]":
-                    break
-                chunk = _json(payload)
-                if chunk.get("error"):
-                    raise ProviderError(str(chunk["error"].get("message", chunk["error"])))
-                for choice in chunk.get("choices", []):
-                    text = (choice.get("delta") or {}).get("content")
-                    if text:
-                        got_text = True
-                        yield text
-        if not got_text:
-            raise ProviderError("The describer returned an empty whisper")
+        if self.name not in self._no_reasoning:
+            # Reasoning models bill their thinking to max_tokens and can spend the
+            # whole budget there, streaming nothing back. This is a 70-word look
+            # at a picture, so we ask them not to think about it.
+            body["reasoning"] = {"enabled": False}
+        return body
+
+    async def stream(self, image: Image.Image, voice: str, imagination: float) -> AsyncIterator[str]:
+        last: Optional[ProviderError] = None
+        finish_reason: Optional[str] = None
+        for attempt in range(self.ATTEMPTS):
+            got_text = False
+            finish_reason = None
+            try:
+                async with self.client.stream("POST", "/chat/completions",
+                                              json=self._body(image, voice, imagination)) as resp:
+                    if resp.status_code != 200:
+                        status = resp.status_code
+                        message = _openrouter_error(await resp.aread(), status)
+                        if status == 400 and "reasoning" in message.lower() and self.name not in self._no_reasoning:
+                            self._no_reasoning.add(self.name)
+                            log.warning("%s turned down the reasoning flag, asking again without it", self.name)
+                            last = ProviderError(message, retryable=True)
+                            continue
+                        raise ProviderError(message, retryable=status == 429 or status >= 500)
+                    async for line in resp.aiter_lines():
+                        if not line.startswith("data:"):
+                            continue  # SSE comments / keep-alives
+                        payload = line[5:].strip()
+                        if payload == "[DONE]":
+                            break
+                        chunk = _json(payload)
+                        if chunk.get("error"):
+                            raise ProviderError(str(chunk["error"].get("message", chunk["error"])),
+                                                retryable=True)
+                        for choice in chunk.get("choices", []):
+                            finish_reason = choice.get("finish_reason") or finish_reason
+                            text = (choice.get("delta") or {}).get("content")
+                            if text:
+                                got_text = True
+                                yield text
+            except ProviderError as e:
+                if got_text:      # words already reached the client, so a retry would repeat them
+                    raise
+                if not e.retryable:
+                    raise
+                last = e
+            if got_text:
+                return
+            if attempt + 1 < self.ATTEMPTS:
+                log.warning("describer came back empty, retrying (%d/%d)", attempt + 1, self.ATTEMPTS)
+                await asyncio.sleep(self.RETRY_DELAY)
+        if last is not None:
+            raise last
+        if finish_reason == "length":
+            raise ProviderError("The describer ran out of tokens before it wrote anything")
+        raise ProviderError("The describer returned an empty whisper")
 
 
 # --------------------------------------------------------------------------- #
